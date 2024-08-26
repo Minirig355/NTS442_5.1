@@ -1,0 +1,384 @@
+Complete Beginner Intro
+	
+====================================================================================================================================
+
+////////////////////////////////////////// HOW WEBSITES WORK COMPLETED IN PRE-SECURITY \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+====================================================================================================================================
+====================================================================================================================================
+
+//////////////////////////////////////////// HTTP IN DETAIL COMPLETED IN PRE-SECURITY \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+====================================================================================================================================
+
+	Burp Suites: The Basics
+		Task 1 - Introduction
+		Task 2 - What is Burp Suite 
+		Task 3 - Features of Burp Community
+			a. Proxy		-	capturing and modifying requests
+			b. Repeater		-	repeating requests
+			c. Intruder		-	bruteforce/fuzzing
+			d. Decoder		-	decode/encode
+			e. Comparer		-	Compare data
+			f. Sequencer	-	Good for RNG sequencing
+		Task 4 - Installation
+		Task 5 - Dashboard
+			• Quadrants:
+				1. Tasks
+				2. Event Log
+				3. Issue Activity
+				4. Advisory
+		Task 6 - Navigation
+			• Useful shortcuts:
+				○ CTRL + SHIFT + D 	=	DASHBOARD
+				○ CTRL + SHIFT + T	=	TARGET
+				○ CTRL + SHIFT + P	=	PROXY
+				○ CTRL + SHIFT + I	=	INTRUDER
+				○ CTRL + SHIFT + R	=	REPEATER
+		Task 7 - Options
+		Task 8 - Introduction to the Burp Proxy
+		Task 9 - Connecting through the Proxy (FoxyProxy)
+			• Initially I configured the proxy manually, but the lesson has it via FoxyProxy so I redid it that way.
+				○ localhost:8080
+				○ Tested on http://<target ip>
+		Task 10 - Site Map and Issue Definitions
+			• With the proxy configured I browsed the target machine, the flag was found in the sitemap
+		Task 11 - The Burp Suite Browser
+			• FIX FOR ROOT USER BURPSUITE Browser
+				1. Smart Option: Run it on a lower perm user
+				2. Easy Option: Settings > Tools > Burp's Browser -- Check 'Allow to run without a sandbox' (!INSECURE)
+		Task 12 - Scoping and Targeting
+			• I update the scope in both the Target and Proxy tab to only capture <target ip> traffic
+		Task 13 - Proxying HTTPS
+			• I'm using AttackBox so this is irrelevant but it's just importing a cert
+		Task 14 - Example Attack
+			• In trying to do an XSS, I see the email field filters for special characters, but it's a client side filter
+				○ I bypass this by capturing the packet and modifying its contents in Burpsuite directly
+		
+	--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--
+
+	OWASP Top 10 - 2021
+		Task 1 - Intro
+		Task 2 - Accessing Machines
+		Task 3 - 1. Broken Access Control
+			• As it says on the tin
+		Task 4 - BAC IDOR Challenge
+			• By changing the query paramters in the URL I'm able to read other notes of a unproperly configured server
+		Task 5 - 2. Cryptographic Failures
+			• encrypting in transit and encrypting at rest
+		Task 6 - CF Supporting 1
+			• Flat file databases (Single file, queryable)
+			• sqlite3 is a good client for accessing flat file db's
+			• Some commands
+				○ .tables 						(dumps tables)
+				○ PRAGMA table_info(<table>);	(table info (cols etc))
+				○ SELECT * FROM <table>;		(dumping info)
+		Task 7 - CF Supporting 2
+			• Crackstation (website for hash cracking)
+		Task 8 - CF Challenge
+			• Navigate to website, use Inspect Element to find a dev note leading me to /assets
+			• Downloading the db on /assets I use the sqlite3 commands to analyze the db, finding users table to be of interest
+				1. .open webapp.db
+				2. .tables
+				3. PRAGMA table_info(users);
+				4. 0 userID | 1 username | 2 password | 3 admin
+				5. SELECT * FROM users;
+			• From dumping the table I find two accounts with admin access enabled, they want me to use Crackstation but I use JTR to crack the hash
+				1. echo <hash> > hash.txt
+				2. john --format=raw-md5 hash.txt
+				3. password == qwertyuiop
+		Task 9 - 3. Injection
+		Task 10 - Command Injection
+			• Here there's a vulnerable website that's passing arbitrary commands along to the server. I sent a few through the exploit it:
+				1. $(ls)						I found there is a txt file in the root directly
+				2. $(cat /etc/passwd)			Listed users
+				3. $(cut -d: -f1 /etc/passwd)	Cleaner way to list users
+				4. $(whoami)					Find who the app is running as
+				5. $(cat /etc/os-release)		Server info
+		Task 11 - 4. Insecure Design
+			• Now THIS one I found really fun since I was given some freedom. The premise was a website with a forgot password field that seemed
+			  easy enough to guess. So I spun up Burpsuite and captured the packed for submitting the question (favorite color seemed easiest)
+			  I created a short wordlist of all the colors I could imagine and then used an intruder attack to send them and see the responses
+		Task 12 - 5. Security Misconfig
+			• Here there's a site with an interactive console that takes python expressions exposed.
+				○ import os; print(os.popen("ls -l").read())
+				○ import os; print(os.popen("cat app.py").read())
+		Task 13 - 6. Vulnerable & Outdated Components
+		Task 14 - Exploit
+		Task 15 - Lab
+			• !! I had to look this one up :( I didn't know bookstore was the term to search exploit-db with
+			• Upon finding the exploit, I run it using the command below and get a shell on the server
+				○ python3 47887.py <url>
+		Task 16 - 7. Identification and Auth Failures
+		Task 17 - Practical
+			• Here the exploit is re-registration, I simply register known existing accounts with a " " which is ignored when assigning perms
+		Task 18 - 8. Software and Data Integrity Failures
+		Task 19 - Software Integrity Failures
+			• Subresource Integrity (SRI) - A hash w/ a non-local library
+				○ SRIhash.org		can hash resources and format the string automatically
+		Task 20 - Data Integrity Failures
+			• There is a website with a vulnerable implementation of JWT, I logged in as a guest user to get a cookie
+			• Analyzing the cookie I did the following steps to get the flag
+				1. Copy just the header and signature
+				2. Decode Base64 both of them
+				3. Change alg to none, and changed guest to admin
+				4. Re-encoded the string and saved the cookie without the signature part
+				(NOTE: I was originally tripped up because I removed the . leading into the signature part too, after edit it was successful)
+		Task 21 - 9. Security Logging and Monitoring Failures
+		Task 22 - 10. Server-Side Request Forgery (SSRF)
+			• I'm given a website that exposes a server parameter, I capture that with burpsuite and use nc to listen for a responses
+				○ nc -lvp 8090		(totally arbitrary port that I figured wouldn't be in use)
+				○ changed server to /download?server=<ip>:8090
+		
+	--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--
+	
+	OWASP Juice Shop
+		Task 1 - Open for Business 
+		Task 2 - Let's go on an adventure!
+			• I turned on burpsuite and generally browsed, allowing myself to get a decent sitemap
+		Task 3 - Inject the juice
+			• Here I used simple SQLinjection on a packet captured by burpsuite to into the admin accounts
+				○ {"email":"' or 1=1--","password":"test"}
+			• After that I do the same with a specific email, no longer needing the 1=1 section since the email is already considered true
+		Task 4 - Who broke my lock?!
+			• Next I bruteforce the admin's password using Intruder in Burpsuite and the best1050 wordlist
+				○ After long enough I found the pass to be admin123, really?
+			• After that is just a quick breakdown on OSINT and finding security question answers naturally
+		Task 5 - AH! Don't look!
+			• On looking at some links, I found that the site has an exposed FTP server, spicy
+			• Next question is a little more OSINT on finding someone's weak password
+			• After that is a brief rundown on how to implement a poison nullbyte to bypass a 403 error
+		Task 6 - Who's flying this thing?
+			• I simply log into the admin acct and access the hidden admin page
+			• Next I access someone else's basket and then remove all 5-star reviews (flag showed after removing 1)
+		Task 7 - Where did that come from?
+			• DOM XSS
+				○ <iframe src="javascript:alert(`xss`)"> 
+			• Persistent XSS
+				○ capturing a packet and changing some values to show pers xss is capable on the server
+			• Reflected XSS
+				○ This one was as simple as changing the query in the browser
+		
+	--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--
+	
+	Upload Vulnerabilities
+		Task 1 - Getting Started
+			• Updated the /etc/hosts file to allow for vhosting
+		Task 2 - Intro
+		Task 3 - General Methodologies
+		Task 4 - Overwriting Existing Files
+			• Used inspect element to find an image that I can overwrite and overwrote it
+		Task 5 - Remote Code Execution
+			• I ran a gobuster command to enumerate some hidden pages on the file upload site
+				○ gobuster dir -u <url> -w <path>/directory-list-2.3-medium.txt
+					+ /resources looks promising...
+			• Next I download a php_reverse_shell script and change the ip:port parameters for my machine
+			• After opening a netcat listener, uploading and requesting the file I get a reverse shell
+				• nc -lvnp 4444
+		Task 6 - Filtering
+		Task 7 - Bypassing Client-Side Filtering
+			• Bypass Methods
+				a. Disable JS (only works if JS isn't required for site to work)
+				b. Intercept & modify page (Burpsuite)
+					+ NOTE, Burpsuite won't intercept external JS by default, add ^js$| to Intercept Client Requests in options
+				c. Intercept & modify upload (Burpsuite)
+				d. Send file directly (curl)
+			• To begin I ran an identical gobuster to task 5, but with the new url, I found a /images directory that's of interest
+			• Given the context of the directory, I packaged my php shell as a png file and used burpsuite to edit the MIME data
+				○ VERY ANNOYINGly wasted ~30 minutes troubleshooting why I couldn't upload, just to find out I had ?submit=failure in my queryable
+				○ After uploading I ran it to get a reverse shell and found the flag
+		Task 8 - Bypassing Server-Side Filtering: File Extensions
+			• I started with your standard GoBuster scan, as that was going I went along with the next steps
+			• I tried plenty of different ways to bypass file extensions (shell.jpg.php, shell.phar) but the first one to work was .php5
+			• By now my gobuster wasn't done but enumerated /assets and /privacy
+				○ /assets had nothing
+				○ /privacy had my shell, I opened it and got the flag
+		Task 9 - Bypassing Server-Side Filtering: Magic Numbers
+			• Gobuster again, immediately enumerated /graphics and /assets
+			• I learned by uploading the .png from earlier (the real one) that .gifs are required for this
+			• Armed with this info and the info in the module I use the pre-installed Bless Hex Editor to add the GIF file format header.
+				○ With this I ran the shell.php on the server, got the reverse shell then the flag
+		Task 10 - Example Methology
+		Task 11 - Challenge
+			• For this challenge a custom wordlist was made, I got that on my attackbox and then ran two gobuster commands
+				○ Normal one to enumerate hidden pages and directories
+				○ One with the given wordlist in /content to find files
+			• I won't lie, this challenge was hard and I required hints to get through it.
+			• From here after much testing I was able to deduce that I needed a different way to open a shell than my php reverse shell
+				○ With some hints I figured out that I need one capable of exploiting NodeJS
+				○ Just as before I used Bless Hex Editor to change the headers to a jpg
+			• With the new shell script in hand and burpsuite prepared to utilize it I uploaded and intercepted the request
+				○ There was nothing more needed to upload it, I sent the packets through and re-scanned with gobuster
+			• Lastly with the rescan I was able to go to /admin subdirectory to execute the reverse shell and get the flag 
+		
+	--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--
+	
+	Picklerick CTF
+		1. Started with nmap and gobuster scans, after I got the scans started I inspected element on the webpage.
+			○ Inspect Element:
+				+ username == R1ckRul3s
+			○ gobuster:
+				+ /assets
+				+ /server-status (403)
+			○ nmap:
+				+ port 22
+				+ port 80
+		2. Armed with the information from the three 'recon' tasks, I tried to bruteforce the ssh login with hydra and rockyou.txt as
+			I've done before on other modules, but this ssh service wasn't allowing password authentication so that was fruitless
+		3. As my nmap scan continued to work I poked around a little more, the assets alluded to a page that may exist, portal. It's
+			shown as an image but it's also a common term for a way to log into a page. Taking a wild guess I tried /portal.php as a
+			page and was successful
+		4. I'll admit, I got stuck here for a bit and found a walkthrough just to find the missing step, I didn't watch further, I
+			enjoy a little challenge. It was there where I realized I forgot the robots.txt file, downloading that I found what turned
+			out to be a password to go along with the username
+		5. I was presented with a command prompt with limited commands (can't cat to read the super secret document), determined to
+			read the document I checked 'pwd' to make sure I was in the right directory and then just downloaded the file the same
+			way I downloaded robots.txt, that was the first ingredient (flag).
+				○ The file clue.txt was an obvious next step, it told me to look around the file system
+		6. From poking around I was able to see a file named "second ingredient" in a user named rick's home directory
+				○ I tried using a command substitution to run cat, not sure what I was thinking, didn't work (echo "$(cat<path>)"
+				○ Instead of relying on cat I decided to try the less command, it worked and I got the second flag
+		7. After that it was fairly simple to get the last flag, my eyes went to the root directory after rick's user directory,
+			I noticed I didn't have permissions to view the root folder as my current user (www-data) so I figured I'd try sudo.
+			To my surprise sudo worked, I saw another file named 3rd and used less to read it, getting the final flag.
+
+====================================================================================================================================
+
+Cryptography
+	Hashing - Crypto 101
+		Task 1 - Key terms
+		Task 2 - What is a hash function?
+			• MD5 and SHA1 technically not safe, don't use for critical information
+		Task 3 - Uses for Hashing
+			• Used Hashes.com (CrackStation had annoying captcha) to crack the hash
+		Task 4 - Recognising password hashes
+		Task 5 - Password Cracking
+			• For the first hash I created a file of it with echo, then used johntheripper to crack it, knowing it's bcrypt by the %2%
+			• Second hash johntheripper cracked almost immediately with SHA256
+			• Next one is SHA512crypt which you can tell by the %6%, quickly cracked with jtr
+			• Last one was either MD5 or NTLM but when I tried rockyou I got no results, instead of trying lists I just decided to checked
+				if an online cracker would have it, hashes.com cracked it.
+		Task 6 - Hashing for integrity checking
+
+	--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--
+
+	John The Ripper
+		Task 1 - John who?
+		Task 2 - Setting up John the Ripper
+		Task 3 - Wordlists
+		Task 4 - Cracking Basic Hashes
+			• Used a python script to identify the hash types for each hash and then used john to crack them
+		Task 5 - Cracking Windows Authentication Hashes
+			• I went into this with the knowledge that it's NTLM, so simple to crack
+		Task 6 - Cracked /etc/shadow Hashes
+			• Here I use the built-in unshadow tool first then cracked it
+		Task 7 - Single Crack Mode
+			• Changed the file contents to be suitable and used the --single flag
+		Task 8 - Custom Rules
+		Task 9 - Cracking Password Protected Files
+			• Used zip2john and then cracked the output file
+		Task 10 - Cracking Password Protected RAR Archives
+			• Basically the last step but rar2john
+		Task 11 - Cracking SSH Keys with John
+			• Very similar to the last steps but ssh2john
+				○ python /<path>/ssh2john.py id_rsa > id_rsa.txt
+
+	--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--
+
+	Encryption - Crypto 101
+		Task 1 - What will this room cover?
+		Task 2 - Key Terms
+		Task 3 - Why is Encryption Important
+		Task 4 - Crucial Crypto Maths
+		Task 5 - Types of Encryption
+		Task 6 - RSA - Rivest Shamir Adleman
+			•  https://github.com/Ganapati/RsaCtfTool 
+		Task 7 - Establishing Keys Using Asymmetric Cryptography
+		Task 8 - Digital Signatures and Certificates
+			• !!! There's something wrong with this question I suspect. I was able to deduce the answer was E5 (answer now listed anywhere
+				online as being E5), and despite checking on both my home PC, and then even downloading the entire cert on the attackbox
+				and using grep to search for 'E5', no results came up.
+					1. curl -vI https://www.tryhackme.com | grep "E5"
+		Task 9 - SSH Authentication
+			• Cracked the key like in the JTR module
+		Task 10 - Explaining Diffie Hellman Key Exchange
+		Task 11 - PGP, GPG and AES
+			• I use the key provided to decrypt the message using gpg
+		Task 12 - The Future - Quantum Computers and Encryption
+			• 
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--
+
+
+====================================================================================================================================
+
+//////////////////////////////////////////// PLACEHOLDERRRRRRRRRRRRRRRRRRRRRRRRRRRRRR \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+====================================================================================================================================
+	
+
+		Task 1 - 
+			• 
+		Task 2 - 
+			• 
+		Task 3 - 
+			• 
+		Task 4 - 
+			• 
+		Task 5 - 
+			• 
+		Task 6 - 
+			• 
+		Task 7 - 
+			• 
+		Task 8 - 
+			• 
+		Task 9 - 
+			• 
+		Task 10 - 
+			• 
+		Task 11 - 
+			• 
+		Task 12 - 
+			• 
+		Task 13 - 
+			• 
+		Task 14 - 
+			• 
+		Task 15 - 
+			• 
+		Task 16 - 
+			• 
+		Task 17 - 
+			• 
+		Task 18 - 
+			• 
+		Task 19 - 
+			• 
+		Task 20 - 
+			• 
+		Task 21 - 
+			• 
+		Task 22 - 
+			• 
+		Task 23 - 
+			• 
